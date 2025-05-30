@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Área - Plano Cartesiano</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .canvas-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+        
+        #canvas {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            width: 100%;
+            height: auto;
+        }
+        
+        .control-panel {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .coordinate-input {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            transition: border-color 0.2s ease;
+        }
+        
+        .coordinate-input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+            background: white;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            border: 1px solid #007bff;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+            border-color: #0056b3;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            border: 1px solid #dc3545;
+            border-radius: 4px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+            border-color: #bd2130;
+        }
+        
+        .result-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #333;
+        }
+        
+        .process-step {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+        }
+        
+        .coordinate-list {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .coordinate-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .coordinate-item:hover {
+            background: #e9ecef;
+        }
+        
+        .delete-btn {
+            background: #dc3545;
+            border: none;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            transition: background-color 0.2s ease;
+        }
+        
+        .delete-btn:hover {
+            background: #c82333;
+        }
+        
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        .main-title {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Responsive canvas */
+        @media (max-width: 768px) {
+            #canvas {
+                width: 100%;
+                height: 350px;
+            }
+            
+            .control-panel {
+                margin-top: 20px;
+            }
+            
+            .btn-group {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+            
+            .btn-group .btn {
+                flex: 1;
+                min-width: 120px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .container-fluid {
+                padding: 10px;
+            }
+            
+            .control-panel {
+                padding: 15px;
+            }
+            
+            .btn-group .btn {
+                min-width: 100px;
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+        }
+        
+        .btn-spacing {
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <h1 class="main-title">Calculadora de Área - Plano Cartesiano</h1>
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="canvas-container">
+                    <canvas id="canvas" width="700" height="500"></canvas>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="control-panel">
+                    <h5 class="text-center mb-4">Coordenadas</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Coordenadas:</label>
+                        <input type="text" id="coordInput" class="form-control coordinate-input" placeholder="Ej: (-9,3), (-7,5), (2,8) o ingresa X,Y individual" autocomplete="off">
+                        <small class="text-muted">Puedes pegar múltiples coordenadas o ingresar una por una</small>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">X:</label>
+                            <input type="number" id="xInput" class="form-control coordinate-input" placeholder="Eje X" step="any">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Y:</label>
+                            <input type="number" id="yInput" class="form-control coordinate-input" placeholder="Eje Y" step="any">
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mb-3">
+                        <div class="btn-group btn-spacing d-flex justify-content-center">
+                            <button id="addPoint" class="btn btn-primary">Agregar Punto</button>
+                            <button id="clearCanvas" class="btn btn-danger">Limpiar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="coordinate-list" id="pointsList">
+                        <p class="text-muted text-center">No hay puntos agregados</p>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button id="calculateArea" class="btn btn-primary" disabled>Calcular Área</button>
+                    </div>
+                </div>
+                
+                <div id="resultContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let points = [];
+        
+        // Configuración del plano
+        const GRID_SIZE = 20;
+        let ORIGIN_X = canvas.width / 2;
+        let ORIGIN_Y = canvas.height / 2;
+        
+        // Configuración del canvas responsivo
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const containerWidth = container.clientWidth - 40; // padding
+            const maxWidth = 700;
+            const width = Math.min(containerWidth, maxWidth);
+            const height = Math.round(width * 0.7); // ratio 7:10
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Actualizar configuraciones
+            ORIGIN_X = canvas.width / 2;
+            ORIGIN_Y = canvas.height / 2;
+            
+            redrawCanvas();
+        }
+        
+        // Inicializar canvas
+        function initCanvas() {
+            resizeCanvas();
+        }
+        
+        function drawGrid() {
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 0.5;
+            
+            // Líneas verticales
+            for (let x = 0; x <= canvas.width; x += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            // Líneas horizontales
+            for (let y = 0; y <= canvas.height; y += GRID_SIZE) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+        
+        function drawAxes() {
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            // Eje X
+            ctx.beginPath();
+            ctx.moveTo(0, ORIGIN_Y);
+            ctx.lineTo(canvas.width, ORIGIN_Y);
+            ctx.stroke();
+            
+            // Eje Y
+            ctx.beginPath();
+            ctx.moveTo(ORIGIN_X, 0);
+            ctx.lineTo(ORIGIN_X, canvas.height);
+            ctx.stroke();
+            
+            // Etiquetas de los ejes
+            ctx.fillStyle = '#333';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            
+            // Números en X
+            for (let i = -15; i <= 15; i++) {
+                if (i !== 0) {
+                    let x = ORIGIN_X + i * GRID_SIZE;
+                    ctx.fillText(i.toString(), x, ORIGIN_Y + 15);
+                }
+            }
+            
+            // Números en Y
+            ctx.textAlign = 'right';
+            for (let i = -10; i <= 10; i++) {
+                if (i !== 0) {
+                    let y = ORIGIN_Y - i * GRID_SIZE;
+                    ctx.fillText(i.toString(), ORIGIN_X - 5, y + 4);
+                }
+            }
+            
+            // Origen
+            ctx.textAlign = 'right';
+            ctx.fillText('0', ORIGIN_X - 5, ORIGIN_Y + 15);
+        }
+        
+        function cartesianToCanvas(x, y) {
+            return {
+                x: ORIGIN_X + x * GRID_SIZE,
+                y: ORIGIN_Y - y * GRID_SIZE
+            };
+        }
+        
+        function drawPoint(x, y, index) {
+            let canvasCoords = cartesianToCanvas(x, y);
+            
+            // Punto
+            ctx.fillStyle = '#667eea';
+            ctx.beginPath();
+            ctx.arc(canvasCoords.x, canvasCoords.y, 6, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Borde
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Etiqueta
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(`P${index + 1}(${x},${y})`, canvasCoords.x, canvasCoords.y - 15);
+        }
+        
+        function drawPolygon() {
+            if (points.length < 3) return;
+            
+            ctx.strokeStyle = '#764ba2';
+            ctx.fillStyle = 'rgba(102, 126, 234, 0.3)';
+            ctx.lineWidth = 3;
+            
+            ctx.beginPath();
+            let firstPoint = cartesianToCanvas(points[0].x, points[0].y);
+            ctx.moveTo(firstPoint.x, firstPoint.y);
+            
+            for (let i = 1; i < points.length; i++) {
+                let point = cartesianToCanvas(points[i].x, points[i].y);
+                ctx.lineTo(point.x, point.y);
+            }
+            
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+        
+        function redrawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawAxes();
+            
+            points.forEach((point, index) => {
+                drawPoint(point.x, point.y, index);
+            });
+            
+            drawPolygon();
+        }
+        
+        function updatePointsList() {
+            const pointsList = document.getElementById('pointsList');
+            
+            if (points.length === 0) {
+                pointsList.innerHTML = '<p class="text-muted text-center">No hay puntos agregados</p>';
+                document.getElementById('calculateArea').disabled = true;
+                return;
+            }
+            
+            let html = '';
+            points.forEach((point, index) => {
+                html += `
+                    <div class="coordinate-item">
+                        <span><strong>P${index + 1}:</strong> (${point.x}, ${point.y})</span>
+                        <button class="delete-btn" onclick="removePoint(${index})" title="Eliminar punto">×</button>
+                    </div>
+                `;
+            });
+            
+            pointsList.innerHTML = html;
+            document.getElementById('calculateArea').disabled = points.length < 3;
+        }
+        
+        function removePoint(index) {
+            points.splice(index, 1);
+            redrawCanvas();
+            updatePointsList();
+        }
+        
+        function parseCoordinates(input) {
+            // Limpiar espacios en blanco y normalizar
+            const cleanInput = input.replace(/\s+/g, '').trim();
+            
+            if (!cleanInput) return [];
+            
+            const coordinates = [];
+            
+            // Buscar patrones de coordenadas (x,y)
+            const regex = /\(([^,]+),([^)]+)\)/g;
+            let match;
+            
+            while ((match = regex.exec(cleanInput)) !== null) {
+                const x = parseFloat(match[1]);
+                const y = parseFloat(match[2]);
+                
+                if (!isNaN(x) && !isNaN(y)) {
+                    coordinates.push({ x, y });
+                }
+            }
+            
+            return coordinates;
+        }
+        
+        function addMultiplePoints() {
+            const coordInput = document.getElementById('coordInput');
+            const inputValue = coordInput.value.trim();
+            
+            if (!inputValue) {
+                // Si no hay nada en el input múltiple, usar inputs individuales
+                addPoint();
+                return;
+            }
+            
+            const newPoints = parseCoordinates(inputValue);
+            
+            if (newPoints.length === 0) {
+                alert('Formato inválido. Usa el formato: (-9,3), (-7,5), (2,8)');
+                return;
+            }
+            
+            // Agregar todos los puntos válidos
+            points.push(...newPoints);
+            redrawCanvas();
+            updatePointsList();
+            
+            // Limpiar el input
+            coordInput.value = '';
+            coordInput.focus();
+            
+            // Mostrar mensaje de confirmación
+            const count = newPoints.length;
+            if (count === 1) {
+                alert(`Se agregó 1 punto correctamente`);
+            } else {
+                alert(`Se agregaron ${count} puntos correctamente`);
+            }
+        }
+        
+        function clearCanvas() {
+            points = [];
+            redrawCanvas();
+            updatePointsList();
+            document.getElementById('resultContainer').innerHTML = '';
+            
+            // Limpiar todos los inputs
+            document.getElementById('coordInput').value = '';
+            document.getElementById('xInput').value = '';
+            document.getElementById('yInput').value = '';
+            document.getElementById('coordInput').focus();
+        }
+        
+        function calculatePolygonArea() {
+            if (points.length < 3) return 0;
+            
+            let area = 0;
+            let process = [];
+            
+            process.push(`<div class="process-step"><strong>Fórmula de Shoelace (Gauss):</strong><br>Área = ½|∑(xᵢyᵢ₊₁ - xᵢ₊₁yᵢ)|</div>`);
+            
+            process.push(`<div class="process-step"><strong>Coordenadas ordenadas:</strong><br>${points.map((p, i) => `P${i+1}(${p.x}, ${p.y})`).join(', ')}</div>`);
+            
+            let calculations = [];
+            
+            for (let i = 0; i < points.length; i++) {
+                let j = (i + 1) % points.length;
+                let term = points[i].x * points[j].y - points[j].x * points[i].y;
+                area += term;
+                
+                calculations.push(`(${points[i].x} × ${points[j].y}) - (${points[j].x} × ${points[i].y}) = ${points[i].x * points[j].y} - ${points[j].x * points[i].y} = ${term}`);
+            }
+            
+            process.push(`<div class="process-step"><strong>Cálculos paso a paso:</strong><br>${calculations.join('<br>')}</div>`);
+            
+            area = Math.abs(area) / 2;
+            
+            process.push(`<div class="process-step"><strong>Resultado final:</strong><br>Área = ½ × |suma de términos| = ½ × ${Math.abs(points.reduce((sum, point, i) => {
+                let j = (i + 1) % points.length;
+                return sum + (point.x * points[j].y - points[j].x * point.y);
+            }, 0))} = <strong>${area.toFixed(4)} unidades²</strong></div>`);
+            
+            return { area, process };
+        }
+        
+        function displayResults() {
+            const result = calculatePolygonArea();
+            const resultContainer = document.getElementById('resultContainer');
+            
+            let html = `
+                <div class="result-card fade-in">
+                    <h4>Resultado del Cálculo</h4>
+                    <div class="text-center mb-3">
+                        <h3 class="text-primary">Área = ${result.area.toFixed(4)} unidades²</h3>
+                    </div>
+                    <h5>Proceso de Cálculo:</h5>
+                    ${result.process.join('')}
+                </div>
+            `;
+            
+            resultContainer.innerHTML = html;
+        }
+        
+        // Event listeners
+        document.getElementById('addPoint').addEventListener('click', addMultiplePoints);
+        document.getElementById('clearCanvas').addEventListener('click', clearCanvas);
+        document.getElementById('calculateArea').addEventListener('click', displayResults);
+        
+        // Responsive canvas
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Permitir agregar puntos con Enter en cualquier input
+        document.getElementById('coordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addMultiplePoints();
+            }
+        });
+        
+        // Permitir agregar puntos con Enter
+        document.getElementById('xInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('yInput').focus();
+            }
+        });
+        
+        document.getElementById('yInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addPoint();
+            }
+        });
+        
+        // Inicializar
+        initCanvas();
+    </script>
+</body>
+</html>
